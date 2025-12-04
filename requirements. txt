@@ -1,0 +1,8 @@
+flask>=2.0
+ultralytics>=8.0.0
+opencv-python
+numpy
+scikit-learn
+pillow
+geopy
+requests

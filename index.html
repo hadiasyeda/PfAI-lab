@@ -1,0 +1,58 @@
+<!-- templates/index.html -->
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Herd Detector</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+</head>
+<body>
+  <h1>Animal Herd Detection</h1>
+
+  <form action="{{ url_for('detect') }}" method="post" enctype="multipart/form-data">
+    <label>Upload image: <input type="file" name="image" accept="image/*" required></label><br>
+    <label>Latitude (optional): <input name="lat" type="text"></label>
+    <label>Longitude (optional): <input name="lon" type="text"></label><br>
+    <button type="submit">Detect Herds</button>
+  </form>
+
+  {% if result %}
+    <h2>Result</h2>
+    <div>
+      <h3>Annotated image</h3>
+      <img src="{{ result.output }}" alt="annotated" style="max-width:80%;">
+    </div>
+    <div>
+      <h3>Detected clusters</h3>
+      <pre>{{ result.clusters | tojson(indent=2) }}</pre>
+    </div>
+
+    {% if result.coords %}
+      <h3>Map</h3>
+      <div id="map" style="height: 400px;"></div>
+      <script>
+        const coords = {{ result.coords | tojson }};
+        const clusters = {{ result.clusters | tojson }};
+        const map = L.map('map').setView(coords, 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '© OpenStreetMap'
+        }).addTo(map);
+        L.marker(coords).addTo(map).bindPopup("Uploaded coords").openPopup();
+        // show cluster centroids if we had pixel->geo mapping (requires camera georeference) -
+        // here we simply show the provided coords as the herd location.
+        if (clusters.length > 0) {
+          L.circle(coords, {radius:50}).addTo(map).bindPopup("Herd detected (approx)");
+        }
+      </script>
+    {% endif %}
+
+    {% if result.location %}
+      <p><strong>Reverse geocoded address:</strong> {{ result.location }}</p>
+    {% endif %}
+  {% endif %}
+</body>
+</html>
